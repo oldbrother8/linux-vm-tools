@@ -23,7 +23,6 @@ if [ "$(id -u)" -ne 0 ]; then
 fi
 
 apt update && apt upgrade -y
-echo "gdm3 shared/default-x-display-manager select gdm3" | debconf-set-selections
 
 if [ -f /var/run/reboot-required ]; then
     echo "A reboot is required in order to proceed with the install." >&2
@@ -61,10 +60,6 @@ sed -i_orig -e 's/bitmap_compression=true/bitmap_compression=false/g' /etc/xrdp/
 # Create XFCE session script for XRDP
 cat > /etc/xrdp/startxfce.sh << 'EOF'
 #!/bin/sh
-
-# Set up environment variables for proper session initialization
-export DISPLAY=${DISPLAY:-:10.0}
-export XAUTHORITY=${XAUTHORITY:-/home/$(whoami)/.Xauthority}
 export XDG_SESSION_TYPE=x11
 export GDK_BACKEND=x11
 export XDG_CURRENT_DESKTOP=XFCE
@@ -72,32 +67,27 @@ export XDG_SESSION_DESKTOP=xfce
 export XDG_CONFIG_DIRS=/etc/xdg/xdg-xfce:/etc/xdg
 export XDG_DATA_DIRS=/usr/share/xfce:/usr/local/share:/usr/share:/var/lib/snapd/desktop
 export XDG_SESSION_PATH=/run/user/$(id -u)
-export XDG_RUNTIME_DIR=/run/user/$(id -u)
 export LIBGL_ALWAYS_SOFTWARE=1
 export GALLIUM_DRIVER=llvmpipe
 
-# Create XDG runtime directory
-mkdir -p "$XDG_RUNTIME_DIR"
-chmod 0700 "$XDG_RUNTIME_DIR"
+# Create XDG runtime directory if it doesn't exist
+if [ ! -d "$XDG_RUNTIME_DIR" ]; then
+    export XDG_RUNTIME_DIR=/run/user/$(id -u)
+    mkdir -p "$XDG_RUNTIME_DIR"
+    chmod 0700 "$XDG_RUNTIME_DIR"
+fi
 
-# Load locale settings
 if [ -r /etc/default/locale ]; then
   . /etc/default/locale
   export LANG LANGUAGE
 fi
 
-# Initialize D-Bus session properly
-export $(dbus-launch)
+# Start dbus if not running
+if ! pgrep -x dbus-daemon > /dev/null; then
+    dbus-launch --sh-syntax
+fi
 
-# Start GNOME Keyring daemon for password management
-export $(gnome-keyring-daemon --start --components=pkcs11,secrets,ssh)
-
-# Start xdg-desktop-portal services
-systemctl --user import-environment DISPLAY XAUTHORITY
-systemctl --user start xdg-desktop-portal xdg-desktop-portal-gtk
-
-# Start XFCE session
-exec startxfce4
+startxfce4
 EOF
 chmod a+x /etc/xrdp/startxfce.sh
 
@@ -147,7 +137,7 @@ chmod 0700 /var/run/user/$(id -u)
 # Ensure gnome-keyring-daemon is installed and configured
 apt install -y gnome-keyring
 
-# Configure PAM for XRDP sessions to fix keyring unlock
+# Configure PAM for XRDP sessions
 if [ -f /etc/pam.d/xrdp-sesman ]; then
     if ! grep -q "auth optional pam_gnome_keyring.so" /etc/pam.d/xrdp-sesman; then
         echo "auth optional pam_gnome_keyring.so" >> /etc/pam.d/xrdp-sesman
@@ -156,24 +146,6 @@ if [ -f /etc/pam.d/xrdp-sesman ]; then
         echo "session optional pam_gnome_keyring.so auto_start" >> /etc/pam.d/xrdp-sesman
     fi
 fi
-
-# Fix xdg-desktop-portal services
-systemctl enable xdg-desktop-portal xdg-desktop-portal-gtk
-systemctl start xdg-desktop-portal xdg-desktop-portal-gtk
-
-# Configure D-Bus for better session integration
-mkdir -p /etc/dbus-1/session.d/
-cat > /etc/dbus-1/session.d/xrdp.conf << 'EOF'
-<!DOCTYPE busconfig PUBLIC "-//freedesktop//DTD D-BUS Bus Configuration 1.0//EN"
- "http://www.freedesktop.org/standards/dbus/1.0/busconfig.dtd">
-<busconfig>
-  <policy context="default">
-    <allow own="org.freedesktop.portal.Desktop"/>
-    <allow own="org.freedesktop.portal.FileChooser"/>
-    <allow own="org.freedesktop.portal.Settings"/>
-  </policy>
-</busconfig>
-EOF
 
 #
 # End XRDP
@@ -213,17 +185,6 @@ Type=XSession
 DesktopNames=XFCE
 EOF
 fi
-
-# Enable lingering for better user session management
-loginctl enable-linger
-
-# Configure systemd user services for XRDP sessions
-mkdir -p /etc/systemd/user/xdg-desktop-portal.service.d/
-cat > /etc/systemd/user/xdg-desktop-portal.service.d/xrdp.conf << 'EOF'
-[Service]
-Environment="XDG_CURRENT_DESKTOP=XFCE"
-Environment="XDG_SESSION_TYPE=x11"
-EOF
 
 echo "Install is complete."
 echo "Reboot your machine to begin using XRDP."

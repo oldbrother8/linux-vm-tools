@@ -23,6 +23,7 @@ if [ "$(id -u)" -ne 0 ]; then
 fi
 
 apt update && apt upgrade -y
+echo "gdm3 shared/default-x-display-manager select gdm3" | debconf-set-selections
 
 if [ -f /var/run/reboot-required ]; then
     echo "A reboot is required in order to proceed with the install." >&2

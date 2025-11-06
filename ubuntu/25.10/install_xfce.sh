@@ -134,5 +134,3 @@ if [ -f /etc/lightdm/lightdm.conf ]; then
     sed -i 's/^autologin-user=.*/# autologin-user=/' /etc/lightdm/lightdm.conf
     sed -i 's/^autologin-user-timeout=.*/# autologin-user-timeout=/' /etc/lightdm/lightdm.conf
 fi
-
-reboot

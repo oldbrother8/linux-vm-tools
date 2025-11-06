@@ -119,6 +119,20 @@ systemctl start xrdp
 # End XRDP
 ###############################################################################
 
-echo "Install is complete."
-echo "Reboot your machine to begin using XRDP."
-echo "XRDP will now use XFCE desktop which is more compatible with remote sessions."
+###############################################################################
+# Disable auto login
+#
+
+# Disable GDM auto login if configured
+if [ -f /etc/gdm3/custom.conf ]; then
+    sed -i 's/^AutomaticLoginEnable=.*/AutomaticLoginEnable=false/' /etc/gdm3/custom.conf
+    sed -i 's/^AutomaticLogin=.*/# AutomaticLogin=/' /etc/gdm3/custom.conf
+fi
+
+# Disable LightDM auto login if configured
+if [ -f /etc/lightdm/lightdm.conf ]; then
+    sed -i 's/^autologin-user=.*/# autologin-user=/' /etc/lightdm/lightdm.conf
+    sed -i 's/^autologin-user-timeout=.*/# autologin-user-timeout=/' /etc/lightdm/lightdm.conf
+fi
+
+reboot

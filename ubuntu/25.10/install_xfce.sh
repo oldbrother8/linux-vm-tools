@@ -66,12 +66,27 @@ export XDG_CURRENT_DESKTOP=XFCE
 export XDG_SESSION_DESKTOP=xfce
 export XDG_CONFIG_DIRS=/etc/xdg/xdg-xfce:/etc/xdg
 export XDG_DATA_DIRS=/usr/share/xfce:/usr/local/share:/usr/share:/var/lib/snapd/desktop
+export XDG_SESSION_PATH=/run/user/$(id -u)
 export LIBGL_ALWAYS_SOFTWARE=1
 export GALLIUM_DRIVER=llvmpipe
+
+# Create XDG runtime directory if it doesn't exist
+if [ ! -d "$XDG_RUNTIME_DIR" ]; then
+    export XDG_RUNTIME_DIR=/run/user/$(id -u)
+    mkdir -p "$XDG_RUNTIME_DIR"
+    chmod 0700 "$XDG_RUNTIME_DIR"
+fi
+
 if [ -r /etc/default/locale ]; then
   . /etc/default/locale
   export LANG LANGUAGE
 fi
+
+# Start dbus if not running
+if ! pgrep -x dbus-daemon > /dev/null; then
+    dbus-launch --sh-syntax
+fi
+
 startxfce4
 EOF
 chmod a+x /etc/xrdp/startxfce.sh
@@ -115,6 +130,23 @@ EOF
 systemctl daemon-reload
 systemctl start xrdp
 
+# Fix GNOME Keyring PAM daemon control file issue
+mkdir -p /var/run/user/$(id -u)
+chmod 0700 /var/run/user/$(id -u)
+
+# Ensure gnome-keyring-daemon is installed and configured
+apt install -y gnome-keyring
+
+# Configure PAM for XRDP sessions
+if [ -f /etc/pam.d/xrdp-sesman ]; then
+    if ! grep -q "auth optional pam_gnome_keyring.so" /etc/pam.d/xrdp-sesman; then
+        echo "auth optional pam_gnome_keyring.so" >> /etc/pam.d/xrdp-sesman
+    fi
+    if ! grep -q "session optional pam_gnome_keyring.so auto_start" /etc/pam.d/xrdp-sesman; then
+        echo "session optional pam_gnome_keyring.so auto_start" >> /etc/pam.d/xrdp-sesman
+    fi
+fi
+
 #
 # End XRDP
 ###############################################################################
@@ -135,6 +167,25 @@ if [ -f /etc/lightdm/lightdm.conf ]; then
 fi
 
  
+# Configure XFCE session for better compatibility
+mkdir -p /etc/xdg/xfce4/xfconf/xfce-perchannel-xml
+
+# Set XFCE as default session for all users
+update-alternatives --install /usr/bin/x-session-manager x-session-manager /usr/bin/startxfce4 50
+update-alternatives --set x-session-manager /usr/bin/startxfce4
+
+# Ensure XFCE session files are properly configured
+if [ ! -f /usr/share/xsessions/xfce.desktop ]; then
+    cat > /usr/share/xsessions/xfce.desktop << 'EOF'
+[Desktop Entry]
+Name=Xfce Session
+Comment=Use this session to run Xfce as your desktop environment
+Exec=startxfce4
+Type=XSession
+DesktopNames=XFCE
+EOF
+fi
+
 echo "Install is complete."
 echo "Reboot your machine to begin using XRDP."
 echo "XRDP will now use XFCE desktop which is more compatible with remote sessions."

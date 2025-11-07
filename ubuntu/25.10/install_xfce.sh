@@ -60,6 +60,8 @@ sed -i_orig -e 's/bitmap_compression=true/bitmap_compression=false/g' /etc/xrdp/
 # Create XFCE session script for XRDP
 cat > /etc/xrdp/startxfce.sh << 'EOF'
 #!/bin/sh
+export DISPLAY=${DISPLAY:-:10.0}
+export XAUTHORITY=${XAUTHORITY:-/home/$(whoami)/.Xauthority}
 export XDG_SESSION_TYPE=x11
 export GDK_BACKEND=x11
 export XDG_CURRENT_DESKTOP=XFCE

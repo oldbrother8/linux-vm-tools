@@ -1,13 +1,10 @@
 #!/bin/bash
+
+# This script is for Ubuntu 25.10 to download and install XRDP. 
+# Because Gnome uses wayland now, we have to use XFCE or KDE
+
 export DEBIAN_FRONTEND=noninteractive
 
-#
-# This script is for Ubuntu 25.10 to download and install XRDP+XORGXRDP via
-# source. It assumes Gnome is already installed, and it will leave that
-# as the virtual console's desktop.
-
-# Because Gnome uses wayland now, we have to use XFCE or KDE
- 
 ###############################################################################
 # Update our machine to the latest code if we need to.
 #
@@ -83,6 +80,31 @@ if ! pgrep -x dbus-daemon > /dev/null; then
     dbus-launch --sh-syntax
 fi
 
+###############################################################################
+# Optional for 4k screens
+# Configure XFCE HiDPI settings on first login
+if [ ! -f "$HOME/.config/xfce-hidpi-configured" ]; then
+    # Set window scaling factor
+    xfconf-query -c xsettings -p /Gdk/WindowScalingFactor -s 2 --create -t int
+
+    # Set Yaru-xhdpi theme for window manager
+    xfconf-query -c xfwm4 -p /general/theme -s Yaru-xhdpi --create -t string
+
+    # Set Elementary XFCE (HiDPI) icons
+    xfconf-query -c xsettings -p /Net/IconThemeName -s elementary-xfce-hidpi --create -t string
+
+    # Set greybird-wall.svg wallpaper
+    xfconf-query -c xfce4-desktop -p /backdrop/screen0/monitor0/image-path -s /usr/share/backgrounds/greybird-wall.svg --create -t string
+
+    # Enable automatic icon adjustment in panel
+    xfconf-query -c xfce4-panel -p /panels/panel-1/autohide-behavior -s 1 --create -t int
+    xfconf-query -c xfce4-panel -p /panels/panel-1/size -s 36 --create -t int
+
+    # Create marker file to prevent re-configuration
+    mkdir -p "$HOME/.config"
+    touch "$HOME/.config/xfce-hidpi-configured"
+fi
+
 startxfce4
 EOF
 chmod a+x /etc/xrdp/startxfce.sh
@@ -153,27 +175,8 @@ fi
 #
 # End XRDP
 ###############################################################################
-
-###############################################################################
-# OPTIONAL
-#
-# Configure XFCE HiDPI scaling for better readability
-# Set window scaling factor
-xfconf-query -c xsettings -p /Gdk/WindowScalingFactor -s 2 --create -t int
-
-# Set Yaru-xhdpi theme for window manager
-xfconf-query -c xfwm4 -p /general/theme -s Yaru-xhdpi --create -t string
-
-# Set Elementary XFCE (HiDPI) icons
-xfconf-query -c xsettings -p /Net/IconThemeName -s elementary-xfce-hidpi --create -t string
-
-# Set custom DPI for fonts
-xfconf-query -c xsettings -p /Xft/DPI -s 192 --create -t int
-#
-# End OPTIONAL
-###############################################################################
-
+ 
 echo "Install is complete."
 echo "Reboot your machine to begin using XRDP."
 echo "XRDP will now use XFCE desktop which is more compatible with remote sessions."
-echo "Window scaling has been set to 2x for better readability."
+echo "HiDPI scaling (2x) will be configured automatically on first XRDP login."

@@ -216,6 +216,5 @@ echo "Install is complete."
 echo "Reboot your machine to begin using XRDP."
 echo "XRDP will now use XFCE desktop which is more compatible with remote sessions."
 
-# Wait 10 seconds then logout GNOME session
-sleep 10
-gnome-session-quit --logout --no-prompt
+# Wait 5 seconds for reasons
+sleep 5

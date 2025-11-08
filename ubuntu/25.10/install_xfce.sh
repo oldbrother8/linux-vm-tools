@@ -90,6 +90,9 @@ if ! pgrep -x dbus-daemon > /dev/null; then
     dbus-launch --sh-syntax
 fi
 
+# Mask GTK portal service to prevent program launch delays in XFCE sessions
+systemctl --user mask xdg-desktop-portal-gtk.service 2>/dev/null || true
+
 startxfce4
 EOF
 chmod a+x /etc/xrdp/startxfce.sh

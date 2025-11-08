@@ -2,18 +2,12 @@
 export DEBIAN_FRONTEND=noninteractive
 
 #
-# This script is for Ubuntu 22.04 Jammy Jellyfish to download and install XRDP+XORGXRDP via
-# source.
-#
-# Major thanks to: http://c-nergy.be/blog/?p=11336 for the tips.
-#
+# This script is for Ubuntu 25.10 to download and install XRDP+XORGXRDP via
+# source. It assumes Gnome is already installed, and it will leave that
+# as the virtual console's desktop.
 
-###############################################################################
-# Use HWE kernel packages
-#
-HWE=""
-#HWE="-hwe-22.04"
-
+# Because Gnome uses wayland now, we have to use XFCE or KDE
+ 
 ###############################################################################
 # Update our machine to the latest code if we need to.
 #
@@ -36,10 +30,10 @@ fi
 #
 
 # Install hv_kvp utils
-apt install -y linux-tools-virtual${HWE}
-apt install -y linux-cloud-tools-virtual${HWE}
+apt install -y linux-tools-virtual
+apt install -y linux-cloud-tools-virtual
 
-# Install XFCE desktop (more compatible with XRDP)
+# Install XFCE desktop
 apt install -y xfce4 xfce4-goodies
 
 # Install the xrdp service so we have the auto start behavior

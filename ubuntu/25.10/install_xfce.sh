@@ -72,22 +72,22 @@ export XDG_SESSION_PATH=/run/user/$(id -u)
 export LIBGL_ALWAYS_SOFTWARE=1
 export GALLIUM_DRIVER=llvmpipe
 
-# # Create XDG runtime directory if it doesn't exist
-# if [ ! -d "$XDG_RUNTIME_DIR" ]; then
-#     export XDG_RUNTIME_DIR=/run/user/$(id -u)
-#     mkdir -p "$XDG_RUNTIME_DIR"
-#     chmod 0700 "$XDG_RUNTIME_DIR"
-# fi
+# Create XDG runtime directory if it doesn't exist
+if [ ! -d "$XDG_RUNTIME_DIR" ]; then
+    export XDG_RUNTIME_DIR=/run/user/$(id -u)
+    mkdir -p "$XDG_RUNTIME_DIR"
+    chmod 0700 "$XDG_RUNTIME_DIR"
+fi
 
-# if [ -r /etc/default/locale ]; then
-#   . /etc/default/locale
-#   export LANG LANGUAGE
-# fi
+if [ -r /etc/default/locale ]; then
+  . /etc/default/locale
+  export LANG LANGUAGE
+fi
 
-# # Start dbus if not running
-# if ! pgrep -x dbus-daemon > /dev/null; then
-#     dbus-launch --sh-syntax
-# fi
+# Start dbus if not running
+if ! pgrep -x dbus-daemon > /dev/null; then
+    dbus-launch --sh-syntax
+fi
 
 startxfce4
 EOF

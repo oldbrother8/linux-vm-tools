@@ -157,18 +157,18 @@ fi
 ###############################################################################
 # OPTIONAL
 #
-# Configure XFCE window scaling for better readability
-mkdir -p /etc/skel/.config/xfce4/xfconf/xfce-perchannel-xml/
-cat > /etc/skel/.config/xfce4/xfconf/xfce-perchannel-xml/xsettings.xml << 'EOF'
-<?xml version="1.0" encoding="UTF-8"?>
-<channel name="xsettings" version="1.0">
-  <property name="Gdk/WindowScalingFactor" type="int" value="2"/>
-</channel>
-EOF
+# Configure XFCE HiDPI scaling for better readability
+# Set window scaling factor
+xfconf-query -c xsettings -p /Gdk/WindowScalingFactor -s 2 --create -t int
 
-# Also configure for existing root user
-mkdir -p /root/.config/xfce4/xfconf/xfce-perchannel-xml/
-cp /etc/skel/.config/xfce4/xfconf/xfce-perchannel-xml/xsettings.xml /root/.config/xfce4/xfconf/xfce-perchannel-xml/
+# Set Yaru-xhdpi theme for window manager
+xfconf-query -c xfwm4 -p /general/theme -s Yaru-xhdpi --create -t string
+
+# Set Elementary XFCE (HiDPI) icons
+xfconf-query -c xsettings -p /Net/IconThemeName -s elementary-xfce-hidpi --create -t string
+
+# Set custom DPI for fonts
+xfconf-query -c xsettings -p /Xft/DPI -s 192 --create -t int
 #
 # End OPTIONAL
 ###############################################################################

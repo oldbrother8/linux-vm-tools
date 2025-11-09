@@ -83,7 +83,11 @@ fi
 ###############################################################################
 # Optional for 4k screens
 # Configure XFCE HiDPI settings on first login
-if [ ! -f "$HOME/.config/xfce-hidpi-configured" ]; then
+if [ ! -f "$HOME/.config/xfce-hidpi-configured" ]; then   
+
+    # Create marker file to prevent re-configuration
+    mkdir -p "$HOME/.config"
+    touch "$HOME/.config/xfce-hidpi-configured"
     # Window scaling factor
     xfconf-query -c xsettings -p /Gdk/WindowScalingFactor --create --type int  -s 2 
   
@@ -96,6 +100,8 @@ if [ ! -f "$HOME/.config/xfce-hidpi-configured" ]; then
     # Desktop background
     xfconf-query -c xfce4-desktop --property /backdrop/screen0/monitorrdp0/workspace0/last-image --create --type string  -s "/usr/share/xfce4/backdrops/greybird-wall.svg"
  
+    sleep 7
+
     # Panel height
     xfconf-query -c xfce4-panel -p /panels/panel-1/size --create --type int -s 36
 
@@ -105,9 +111,7 @@ if [ ! -f "$HOME/.config/xfce-hidpi-configured" ]; then
     # Panel autohide behavior
     xfconf-query -c xfce4-panel -p /panels/panel-1/autohide-behavior --create --type int -s 0
 
-    # Create marker file to prevent re-configuration
-    mkdir -p "$HOME/.config"
-    touch "$HOME/.config/xfce-hidpi-configured"
+
 fi
 
 startxfce4

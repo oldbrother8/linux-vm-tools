@@ -80,6 +80,9 @@ if ! pgrep -x dbus-daemon > /dev/null; then
     dbus-launch --sh-syntax
 fi
 
+# Configure X11 access control to allow Firefox and other applications
+xhost +
+
 ###############################################################################
 # Optional for 4k screens
 # Configure XFCE HiDPI settings on first login

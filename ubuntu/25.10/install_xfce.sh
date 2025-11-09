@@ -164,7 +164,7 @@ EOF
 
 # reconfigure the service
 systemctl daemon-reload
-systemctl start xrdp
+#systemctl start xrdp
 
 # Fix GNOME Keyring PAM daemon control file issue
 mkdir -p /var/run/user/$(id -u)
@@ -195,19 +195,4 @@ fi
 ###############################################################################
  
 echo "Install is complete."
-echo "XRDP will now use XFCE desktop which is more compatible with remote sessions."
-echo "HiDPI scaling (2x) will be configured automatically on first XRDP login."
-
-# Create reboot script that will execute after this script completes
-cat > /tmp/reboot-after-install.sh << 'EOF'
-#!/bin/bash
-sleep 5
-echo "Rebooting system to apply all changes..."
-sudo reboot
-EOF
-chmod +x /tmp/reboot-after-install.sh
-
-# Launch reboot script in background and exit this script
-/tmp/reboot-after-install.sh &
-echo "Reboot process started in background. System will reboot shortly."
-
+echo "Reboot your machine to begin using XRDP."

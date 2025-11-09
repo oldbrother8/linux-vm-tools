@@ -221,7 +221,7 @@ echo "HiDPI scaling (2x) will be configured automatically on first XRDP login."
 # Create reboot script that will execute after this script completes
 cat > /tmp/reboot-after-install.sh << 'EOF'
 #!/bin/bash
-sleep 1
+sleep 5
 echo "Rebooting system to apply all changes..."
 sudo reboot
 EOF

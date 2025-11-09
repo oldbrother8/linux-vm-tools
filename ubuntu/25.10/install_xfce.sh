@@ -83,20 +83,21 @@ fi
 ###############################################################################
 # Optional for 4k screens
 # Configure XFCE HiDPI settings on first login
-# if [ ! -f "$HOME/.config/xfce-hidpi-configured" ]; then
-#     # Set window scaling factor
-#     xfconf-query -c xsettings -p /Gdk/WindowScalingFactor -s 2 --create -t int
+ if [ ! -f "$HOME/.config/xfce-hidpi-configured" ]; then
+     sleep 3
+     # Set window scaling factor
+     xfconf-query -c xsettings -p /Gdk/WindowScalingFactor -s 2 --create -t int
 
 #     # Set Yaru-xhdpi theme for window manager
 #     xfconf-query -c xfwm4 -p /general/theme -s Yaru-xhdpi --create -t string
 
 #     # Set Elementary XFCE (HiDPI) icons
-#     xfconf-query -c xsettings -p /Net/IconThemeName -s elementary-xfce-hidpi --create -t string
+     xfconf-query -c xsettings -p /Net/IconThemeName -s elementary-xfce-hidpi --create -t string
     
 #     # set desktop background
-#     xfconf-query --channel xfce4-desktop --list | grep last-image | while read path; do
-#         xfconf-query --channel xfce4-desktop --property $path --set  /usr/share/xfce4/backdrops/greybird-wall.svg 
-#     done
+     xfconf-query --channel xfce4-desktop --list | grep last-image | while read path; do
+         xfconf-query --channel xfce4-desktop --property $path --set  /usr/share/xfce4/backdrops/greybird-wall.svg  --create-type string
+     done
 
 #     # increase panel height
 #     xfconf-query --channel xfce4-panel --list | grep size | while read path; do
@@ -116,7 +117,7 @@ fi
 #     # Create marker file to prevent re-configuration
 #     mkdir -p "$HOME/.config"
 #     touch "$HOME/.config/xfce-hidpi-configured"
-# fi
+fi
 
 startxfce4
 EOF

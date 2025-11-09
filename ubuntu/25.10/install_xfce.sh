@@ -92,13 +92,23 @@ if [ ! -f "$HOME/.config/xfce-hidpi-configured" ]; then
 
     # Set Elementary XFCE (HiDPI) icons
     xfconf-query -c xsettings -p /Net/IconThemeName -s elementary-xfce-hidpi --create -t string
+    
+    # Background
+    xfconf-query --channel xfce4-desktop --list | grep last-image | while read path; do
+        xfconf-query --channel xfce4-desktop --property $path --set  /usr/share/xfce4/backdrops/greybird-wall.svg 
+    done
 
-    # Set greybird-wall.svg wallpaper
-    xfconf-query -c xfce4-desktop -p /backdrop/screen0/monitor0/image-path -s /usr/share/backgrounds/greybird-wall.svg --create -t string
+    # enable HiDPI panel settings
+    xfconf-query --channel xfce4-panel --list | grep size | while read path; do
+        xfconf-query -c xfce4-panel -p $path -s 36 --create -t int
+    done
+    xfconf-query --channel xfce4-panel --list | grep icon-size | while read path; do
+        xfconf-query -c xfce4-panel -p $path -s 0 --create -t int
+    done 
+    xfconf-query --channel xfce4-panel --list | grep autohide-behavior | while read path; do
+        xfconf-query -c xfce4-panel -p $path -s 0 --create -t int
+    done 
 
-    # Enable automatic icon adjustment in panel
-    xfconf-query -c xfce4-panel -p /panels/panel-1/autohide-behavior -s 1 --create -t int
-    xfconf-query -c xfce4-panel -p /panels/panel-1/size -s 36 --create -t int
 
     # Create marker file to prevent re-configuration
     mkdir -p "$HOME/.config"

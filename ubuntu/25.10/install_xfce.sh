@@ -84,63 +84,30 @@ fi
 # Optional for 4k screens
 # Configure XFCE HiDPI settings on first login
 if [ ! -f "$HOME/.config/xfce-hidpi-configured" ]; then
-    # First, ensure xfdesktop is running and initialized
-    if ! pgrep -x xfdesktop > /dev/null; then
-        echo "Starting xfdesktop to initialize configuration..."
-        xfdesktop --disable-wm-check &
-        sleep 5
-    fi
-    
-    # Force create desktop properties if they don't exist
-    if ! xfconf-query --channel xfce4-desktop --list | grep -q backdrop; then
-        echo "Creating desktop backdrop configuration..."
-        xfconf-query --channel xfce4-desktop --property /backdrop/screen0/monitor0/image-path --set "" --create --type string
-        xfconf-query --channel xfce4-desktop --property /backdrop/screen0/monitor0/image-style --set 0 --create --type int
-        xfconf-query --channel xfce4-desktop --property /backdrop/screen0/monitor0/workspace0/last-image --set "" --create --type string
-        xfconf-query --channel xfce4-desktop --property /backdrop/screen0/monitor0/workspace0/image-style --set 0 --create --type int
-        sleep 2
-    fi
+    # Window scaling factor
+    xfconf-query -c xsettings -p /Gdk/WindowScalingFactor --create --type int  -s 2 
+  
+    # Window manager theme 
+    xfconf-query -c xfwm4 -p /general/theme --create --type string  -s Yaru-xhdpi 
+ 
+    # Icon theme
+    xfconf-query -c xsettings -p /Net/IconThemeName --create --type string -s elementary-xfce-hidpi
+ 
+    # Desktop background
+    xfconf-query -c xfce4-desktop --property /backdrop/screen0/monitorrdp0/workspace0/last-image --create --type string  -s "/usr/share/xfce4/backdrops/greybird-wall.svg"
+ 
+    # Panel height
+    xfconf-query -c xfce4-panel -p /panels/panel-1/size --create --type int -s 36
 
-    sleep 3
-    
-    # Set window scaling factor
-    xfconf-query -c xsettings -p /Gdk/WindowScalingFactor -s 2 --create --type int
-  
-    # Set Yaru-xhdpi theme for window manager
-    xfconf-query -c xfwm4 -p /general/theme -s Yaru-xhdpi --create --type string
-  
-    # Set Elementary XFCE (HiDPI) icons
-    xfconf-query -c xsettings -p /Net/IconThemeName -s elementary-xfce-hidpi --create --type string
-    
-    # Set desktop background - create properties first, then set values
-    xfconf-query --channel xfce4-desktop --property /backdrop/screen0/monitor0/image-path --set "/usr/share/xfce4/backdrops/greybird-wall.svg" --create --type string
-    xfconf-query --channel xfce4-desktop --property /backdrop/screen0/monitor0/image-style --set 5 --create --type int
-    xfconf-query --channel xfce4-desktop --property /backdrop/screen0/monitor0/workspace0/last-image --set "/usr/share/xfce4/backdrops/greybird-wall.svg" --create --type string
-    xfconf-query --channel xfce4-desktop --property /backdrop/screen0/monitor0/workspace0/image-style --set 5 --create --type int
-  
-    # Increase panel height - create first, then set
-    xfconf-query --channel xfce4-panel --list | grep size | while read path; do
-        xfconf-query -c xfce4-panel -p "$path" -s 36 --create --type int
-    done
-  
-    # Increase panel icon size - create first, then set
-    xfconf-query --channel xfce4-panel --list | grep icon-size | while read path; do
-        xfconf-query -c xfce4-panel -p "$path" -s 0 --create --type int
-    done
-  
-    # Disable panel auto hide - create first, then set
-    xfconf-query --channel xfce4-panel --list | grep autohide-behavior | while read path; do
-        xfconf-query -c xfce4-panel -p "$path" -s 0 --create --type int
-    done
-  
+    # Panel icon size
+    xfconf-query -c xfce4-panel -p /panels/panel-1/icon-size --create --type int -s 0
+
+    # Panel autohide behavior
+    xfconf-query -c xfce4-panel -p /panels/panel-1/autohide-behavior --create --type int -s 0
+
     # Create marker file to prevent re-configuration
     mkdir -p "$HOME/.config"
     touch "$HOME/.config/xfce-hidpi-configured"
-    
-    # Restart xfdesktop to pick up changes
-    pkill xfdesktop
-    sleep 1
-    xfdesktop &
 fi
 
 startxfce4

@@ -98,7 +98,9 @@ install_dependencies() {
         libsoup-3.0-dev \
         libgcr-4-dev \
         libnma-dev \
-        libadwaita-1-dev
+        libadwaita-1-dev \
+        libgstreamer1.0-dev \
+        libgstreamer-plugins-base1.0-dev
     
     print_status "Dependencies installed successfully"
 }
@@ -132,28 +134,33 @@ build_mutter() {
     
     cd mutter
     
-    # Checkout a compatible version (adjust as needed)
+    # Use GNOME 49 branch for better compatibility
     git checkout main
     git pull
+    
+    # Check available branches and use a stable one if main fails
+    if ! git checkout main 2>/dev/null; then
+        print_warning "main branch not available, trying gnome-49"
+        git checkout gnome-49
+    fi
     
     # Create build directory
     rm -rf build
     mkdir build
     cd build
     
-    # Configure with X11 support
+    # Configure with X11 support - using correct meson option values
     meson setup \
         --prefix=/usr \
         --buildtype=release \
         -Ddocs=false \
         -Dtests=false \
-        -Dxwayland=true \
-        -Dx11_egl_stream=true \
-        -Dwayland=true \
-        -Dsystemd=true \
-        -Dnative_backend=true \
-        -Dlibinput=true \
-        -Dx11=true \
+        -Dxwayland=enabled \
+        -Dwayland=enabled \
+        -Dsystemd=enabled \
+        -Dnative_backend=enabled \
+        -Dlibinput=enabled \
+        -Dx11=enabled \
         ..
     
     # Build and install
@@ -175,16 +182,22 @@ build_gdm() {
     
     cd gdm
     
-    # Checkout a compatible version
+    # Use compatible branch
     git checkout main
     git pull
+    
+    # Check available branches
+    if ! git checkout main 2>/dev/null; then
+        print_warning "main branch not available, trying gnome-49"
+        git checkout gnome-49
+    fi
     
     # Create build directory
     rm -rf build
     mkdir build
     cd build
     
-    # Configure with X11 support
+    # Configure with X11 support - using correct meson option values
     meson setup \
         --prefix=/usr \
         --buildtype=release \
@@ -194,8 +207,8 @@ build_gdm() {
         -Dplymouth=disabled \
         -Dselinux=disabled \
         -Dsystemd-journal=true \
-        -Dwayland=true \
-        -Dx11-support=true \
+        -Dwayland=enabled \
+        -Dx11=enabled \
         ..
     
     # Build and install
@@ -217,24 +230,31 @@ build_gnome_session() {
     
     cd gnome-session
     
-    # Checkout a compatible version
+    # Use compatible branch
     git checkout main
     git pull
+    
+    # Check available branches
+    if ! git checkout main 2>/dev/null; then
+        print_warning "main branch not available, trying gnome-49"
+        git checkout gnome-49
+    fi
     
     # Create build directory
     rm -rf build
     mkdir build
     cd build
     
-    # Configure with X11 support
+    # Configure with X11 support - using correct meson option values
     meson setup \
         --prefix=/usr \
         --buildtype=release \
         -Ddocbook=false \
         -Dman=false \
-        -Dsystemd=true \
+        -Dsystemd=enabled \
         -Dconsolekit=disabled \
-        -Dx11=true \
+        -Dwayland=enabled \
+        -Dx11=enabled \
         ..
     
     # Build and install
@@ -256,24 +276,30 @@ build_gnome_shell() {
     
     cd gnome-shell
     
-    # Checkout a compatible version
+    # Use compatible branch
     git checkout main
     git pull
+    
+    # Check available branches
+    if ! git checkout main 2>/dev/null; then
+        print_warning "main branch not available, trying gnome-49"
+        git checkout gnome-49
+    fi
     
     # Create build directory
     rm -rf build
     mkdir build
     cd build
     
-    # Configure with X11 support
+    # Configure - gnome-shell doesn't have direct X11 options
     meson setup \
         --prefix=/usr \
         --buildtype=release \
         -Ddocs=false \
         -Dtests=false \
         -Dman=false \
-        -Dsystemd=true \
-        -Dnetworkmanager=true \
+        -Dsystemd=enabled \
+        -Dnetworkmanager=enabled \
         ..
     
     # Build and install
@@ -281,6 +307,29 @@ build_gnome_shell() {
     sudo ninja install 2>&1 | tee "$LOG_DIR/gnome_shell_install.log"
     
     print_status "gnome-shell built and installed successfully"
+}
+
+# Check available meson options for a component
+check_meson_options() {
+    local component="$1"
+    local path="$2"
+    
+    print_status "Checking available meson options for $component..."
+    
+    cd "$path"
+    
+    if [ -d "build" ]; then
+        rm -rf build
+    fi
+    
+    mkdir build
+    cd build
+    
+    # This will show available options and their possible values
+    meson setup --help 2>&1 | grep -A 20 "Project-specific options" || true
+    
+    # Try to configure to see actual available options
+    meson setup .. 2>&1 | grep -E "(Option|Value|Possible)" || true
 }
 
 # Update system databases
@@ -297,6 +346,9 @@ update_system() {
 # Configure GDM for X11
 configure_gdm() {
     print_status "Configuring GDM for X11 session..."
+    
+    # Backup original GDM config
+    sudo cp /etc/gdm3/custom.conf /etc/gdm3/custom.conf.backup 2>/dev/null || true
     
     # Create GDM custom configuration
     sudo tee /etc/gdm3/custom.conf > /dev/null << 'EOF'
@@ -337,6 +389,29 @@ EOF
     print_status "X11 session file created"
 }
 
+# Verify build components
+verify_build() {
+    print_status "Verifying built components..."
+    
+    local components=("mutter" "gdm" "gnome-session" "gnome-shell")
+    local success=true
+    
+    for comp in "${components[@]}"; do
+        if [ -f "$LOG_DIR/${comp}_install.log" ] && grep -q "Installation succeeded" "$LOG_DIR/${comp}_install.log"; then
+            print_status "✓ $comp installed successfully"
+        else
+            print_error "✗ $comp installation may have failed"
+            success=false
+        fi
+    done
+    
+    if $success; then
+        print_status "All components verified successfully"
+    else
+        print_warning "Some components may not have installed correctly. Check logs in $LOG_DIR/"
+    fi
+}
+
 # Main build function
 main_build() {
     print_status "Starting GNOME X11 build process..."
@@ -360,9 +435,13 @@ main_build() {
     configure_gdm
     create_x11_session
     
+    # Verify build
+    verify_build
+    
     print_status "GNOME X11 build completed successfully!"
     print_warning "Please reboot your system to use GNOME with X11"
     print_warning "Select 'GNOME on X11' from the GDM login screen"
+    print_warning "Build logs are available in: $LOG_DIR/"
 }
 
 # Recovery function
@@ -379,8 +458,28 @@ recover_system() {
         sudo apt install --reinstall gnome-shell mutter gdm3 gnome-session -y
     fi
     
+    # Restore original GDM config
+    if [ -f /etc/gdm3/custom.conf.backup ]; then
+        sudo mv /etc/gdm3/custom.conf.backup /etc/gdm3/custom.conf
+    fi
+    
     sudo systemctl restart gdm
     print_status "Recovery completed. Please check if normal login works."
+}
+
+# Check meson options for troubleshooting
+check_options() {
+    print_status "Checking meson options for all components..."
+    
+    cd "$PKG_BUILD_DIR"
+    
+    for comp in mutter gdm gnome-session gnome-shell; do
+        if [ -d "$comp" ]; then
+            check_meson_options "$comp" "$comp"
+        else
+            print_warning "$comp not cloned yet, skipping option check"
+        fi
+    done
 }
 
 # Show usage
@@ -393,6 +492,7 @@ usage() {
     echo "  build     - Build and install GNOME with X11 support (default)"
     echo "  recover   - Restore original system state"
     echo "  clean     - Clean build directories"
+    echo "  options   - Check available meson options for troubleshooting"
     echo "  help      - Show this help message"
     echo ""
     echo "Build directory: $BUILD_DIR"
@@ -416,6 +516,9 @@ case "${1:-build}" in
         ;;
     "clean")
         clean_build
+        ;;
+    "options")
+        check_options
         ;;
     "help"|"-h"|"--help")
         usage

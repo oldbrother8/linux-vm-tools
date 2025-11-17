@@ -1,0 +1,96 @@
+# ==========================================================
+# JHBuild Configuration for GNOME 49 Development (X11 Focus)
+# ==========================================================
+
+# 1. Environment Configuration
+# Define the prefix where GNOME will be installed
+# Using '~/gnome/49-x11' keeps it separate from your system installation
+prefix = os.path.expanduser('~/gnome/49-x11')
+
+# Set build type to 'debug' for better debugging, or 'release' for optimization
+# build_type = 'release'
+build_type = 'debug' 
+
+# 2. Module Sets (Targeting GNOME 49)
+# GNOME 49 is the development version following 48, often referred to as 'master'
+moduleset = 'gnome-49' # Use this if a specific 49 branch exists
+
+# Alternatively, use 'master' if 49 hasn't branched yet (more common for development)
+# moduleset = 'gnome-world' 
+# branch = 'master'
+# moduleset = 'gnome-world' 
+
+# If you want to use the standard GNOME 49 module set definition:
+# jhbuild automatically pulls definitions from the official GNOME repository 
+# based on the `moduleset` name.
+
+# 3. Custom Build Options (Crucial for X11 preference)
+
+# By default, many modern GNOME components prioritize Wayland.
+# We use 'extra_args' to force specific modules to build against X11 headers
+# or to disable Wayland support where possible (though modern Mutter/GTK will likely require both).
+
+extra_args = {
+    # GTK: Generally requires both, but ensure X11 backend is not disabled
+    'gtk4': [
+        '-Dwayland-backend=enabled', # Keep Wayland for compatibility 
+        '-Dx11-backend=enabled',     # Ensure X11 backend is explicitly enabled
+    ],
+    
+    # Mutter: The window manager (needs XWayland and X11 components)
+    'mutter': [
+        '-Dnative-backend=x11', # This might force X11 as the default backend for the session
+        '-Dwayland=enabled', 
+        '-Dx11=enabled',
+        '-Dudev=enabled',
+    ],
+    
+    # GNOME Shell: Use Wayland for shell rendering, but ensure X11 compatibility
+    'gnome-shell': [
+        '-Dx11-support=enabled',
+    ],
+
+    # Any other module that might switch to Wayland exclusively (e.g., VTE, Terminal)
+    # You might need to add more modules here as they fail during compilation.
+}
+
+# 4. Configure Hooks
+# Necessary environment variables for the build process
+def configure_hooks(module):
+    # Setup PATH and PKG_CONFIG_PATH to find dependencies in the prefix
+    os.environ['PATH'] = prefix + '/bin:' + os.environ['PATH']
+    os.environ['PKG_CONFIG_PATH'] = prefix + '/lib/pkgconfig:' + os.environ.get('PKG_CONFIG_PATH', '')
+    
+    # Ensure X11 development headers are prioritized
+    os.environ['CPPFLAGS'] = os.environ.get('CPPFLAGS', '') + ' -I/usr/include/X11'
+    os.environ['LDFLAGS'] = os.environ.get('LDFLAGS', '') + ' -L/usr/lib/X11'
+
+    # Set Meson CFLAGS (optional, but good practice)
+    os.environ['CFLAGS'] = os.environ.get('CFLAGS', '') + ' -Wno-error'
+
+# 5. Modules Selection
+# If you only want the core environment, use this list.
+# For a full desktop, use `modules = ['meta-gnome-core']` or `modules = ['meta-gnome-desktop']`
+
+modules = [
+    'gsettings-desktop-schemas',
+    'libxml2', 
+    'glib',
+    'pango',
+    'cairo',
+    'atk',
+    'gdk-pixbuf',
+    'graphene',
+    'libadwaita',
+    'gtk4',
+    'gnome-shell',
+    'mutter',
+    'gnome-control-center',
+    'nautilus',
+    # Add other core applications here
+    'gnome-terminal',
+    'epiphany',
+]
+
+# If you want everything needed for a full session:
+# modules = ['meta-gnome-desktop'] 

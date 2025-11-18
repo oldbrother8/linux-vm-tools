@@ -1,17 +1,8 @@
 #!/bin/bash
-
+export DEBIAN_FRONTEND=noninteractive
 #
-# This script is for Ubuntu 22.04 Jammy Jellyfish to download and install XRDP+XORGXRDP via
-# source.
+# This script is for Ubuntu 25.10 Trixie to download and install XRDP+XFCE
 #
-# Major thanks to: http://c-nergy.be/blog/?p=11336 for the tips.
-#
-
-###############################################################################
-# Use HWE kernel packages
-#
-HWE=""
-#HWE="-hwe-22.04"
 
 ###############################################################################
 # Update our machine to the latest code if we need to.
@@ -35,8 +26,8 @@ fi
 #
 
 # Install hv_kvp utils
-apt install -y linux-tools-virtual${HWE}
-apt install -y linux-cloud-tools-virtual${HWE}
+apt install -y linux-tools-virtual
+apt install -y linux-cloud-tools-virtual
 
 # Install XFCE desktop (more compatible with XRDP)
 apt install -y xfce4 xfce4-goodies
@@ -77,12 +68,14 @@ if [ ! -f "$HOME/.config/xfce-configured" ]; then
  
     mkdir -p "$HOME/.config"
     touch "$HOME/.config/xfce-configured"
- 
+
+    xhost +
+
     # Window manager theme 
-    xfconf-query -c xfwm4 -p /general/theme --create --type string  -s Yaru-dark-xhdpi 
+    xfconf-query -c xfwm4 -p /general/theme --create --type string  -s Yaru-dark
  
     # Icon theme
-    xfconf-query -c xsettings -p /Net/IconThemeName --create --type string -s elementary-xfce-hidpi
+    xfconf-query -c xsettings -p /Net/IconThemeName --create --type string -s elementary-xfce
 
     # GTK theme
     xfconf-query -c xsettings -p /Net/IconName --create --type string -s Greybird-dark

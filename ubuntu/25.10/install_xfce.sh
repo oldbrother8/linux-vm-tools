@@ -1,5 +1,5 @@
 #!/bin/bash
-export DEBIAN_FRONTEND=noninteractive
+
 #
 # This script is for Ubuntu 25.10 Trixie to install XRDP+XFCE
 #
@@ -25,6 +25,8 @@ if [ -f /var/run/reboot-required ]; then
     echo "Please reboot and re-run this script to finish the install." >&2
     exit 1
 fi
+
+export DEBIAN_FRONTEND=noninteractive
 
 ###############################################################################
 # XRDP
@@ -58,11 +60,14 @@ xhost +
 # Create XFCE session script for XRDP
 cat > /etc/xrdp/startxfce.sh << 'EOF'
 #!/bin/sh
-export XDG_CONFIG_HOME="$HOME/.config-xfce"
-export XDG_DATA_HOME="$HOME/.local-xfce"
-export XDG_CACHE_HOME="$HOME/.cache-xfce"
-mkdir -p "$XDG_CONFIG_HOME" "$XDG_DATA_HOME" "$XDG_CACHE_HOME"
+export GVFS_DISABLE_FUSE=1
+export GIO_USE_VFS=local
+export XDG_SESSION_TYPE=x11
+export GDK_BACKEND=x11
+export XDG_CURRENT_DESKTOP=XFCE
 export XDG_SESSION_DESKTOP=xfce
+export XDG_CONFIG_DIRS=/etc/xdg/xdg-xfce:/etc/xdg
+export XDG_DATA_DIRS=/usr/share/xfce:/usr/local/share:/usr/share:/var/lib/snapd/desktop
 export LIBGL_ALWAYS_SOFTWARE=1
 export GALLIUM_DRIVER=llvmpipe
 if [ -r /etc/default/locale ]; then
@@ -144,8 +149,8 @@ if [ -f /etc/gdm3/custom.conf ]; then
     sed -i 's/^AutomaticLoginEnable=.*/AutomaticLoginEnable=false/' /etc/gdm3/custom.conf
     sed -i 's/^AutomaticLogin=.*/# AutomaticLogin=/' /etc/gdm3/custom.conf
 fi
-echo "Install is complete."
-echo "Reboot your machine to begin using XRDP."
-echo "Gnome will logout in 15 seconds."
 
-( sleep 15 && gnome-session-quit --logout --no-prompt ) &
+echo "Install is complete."
+echo "Gnome will logout in 5 seconds."
+
+( sleep 5 && sudo -u "${SUDO_USER:-$USER}" gnome-session-quit --logout --no-prompt ) &

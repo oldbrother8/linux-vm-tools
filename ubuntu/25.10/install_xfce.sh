@@ -60,12 +60,11 @@ xhost +
 # Create XFCE session script for XRDP
 cat > /etc/xrdp/startxfce.sh << 'EOF'
 #!/bin/sh
-export GVFS_DISABLE_FUSE=1
-export GIO_USE_VFS=local
 export XDG_SESSION_TYPE=x11
 export GDK_BACKEND=x11
 export XDG_CURRENT_DESKTOP=XFCE
 export XDG_SESSION_DESKTOP=xfce
+export XDG_SESSION_PATH="/org/freedesktop/login1/session-xrdp"
 export XDG_CONFIG_DIRS=/etc/xdg/xdg-xfce:/etc/xdg
 export XDG_DATA_DIRS=/usr/share/xfce:/usr/local/share:/usr/share:/var/lib/snapd/desktop
 export LIBGL_ALWAYS_SOFTWARE=1
@@ -93,6 +92,18 @@ if [ ! -f "$HOME/.config/xfce-configured" ]; then
     xfconf-query -c xfce4-desktop --property /backdrop/screen0/monitorrdp0/workspace0/last-image --create --type string  -s "/usr/share/xfce4/backdrops/greybird-wall.svg"
  
 fi
+
+# Ensure Xauthority exists and is valid
+XAUTHORITY="$HOME/.Xauthority"
+export XAUTHORITY
+
+if [ ! -f "$XAUTHORITY" ]; then
+    touch "$XAUTHORITY"
+fi
+
+xauth generate $DISPLAY . trusted >/dev/null 2>&1
+xauth add $DISPLAY MIT-MAGIC-COOKIE-1 $(xauth list $DISPLAY | awk '{print $3}') >/dev/null 2>&1
+
 startxfce4
 EOF
 chmod a+x /etc/xrdp/startxfce.sh
@@ -132,17 +143,8 @@ ResultInactive=no
 ResultActive=yes
 EOF
 
-# reconfigure the service
-systemctl daemon-reload
-systemctl start xrdp
-#systemctl --user mask --now gnome-keyring-daemon.service gsd-* gnome-session*
-
-#
-# End XRDP
-###############################################################################
-###############################################################################
-# Disable auto login
-#
+# set xfce terminal as default
+update-alternatives --set x-terminal-emulator /usr/bin/xfce4-terminal.wrapper
 
 # We don't want the virtual console to sign into Gnome automatically
 if [ -f /etc/gdm3/custom.conf ]; then
@@ -150,7 +152,28 @@ if [ -f /etc/gdm3/custom.conf ]; then
     sed -i 's/^AutomaticLogin=.*/# AutomaticLogin=/' /etc/gdm3/custom.conf
 fi
 
-echo "Install is complete."
-echo "Gnome will logout in 5 seconds."
+# Fix PAM configuration for XRDP
+PAM_FILE="/etc/pam.d/xrdp-sesman"
 
-( sleep 5 && sudo -u "${SUDO_USER:-$USER}" gnome-session-quit --logout --no-prompt ) &
+# Comment out gnome-keyring and kwallet PAM lines safely
+sed -i 's/^\(\s*\)-auth\s\+optional\s\+pam_gnome_keyring.so/#\1-auth optional pam_gnome_keyring.so/' "$PAM_FILE"
+sed -i 's/^\(\s*\)-auth\s\+optional\s\+pam_kwallet5.so/#\1-auth optional pam_kwallet5.so/' "$PAM_FILE"
+sed -i 's/^\(\s*\)-session\s\+optional\s\+pam_gnome_keyring.so\s\+auto_start/#\1-session optional pam_gnome_keyring.so auto_start/' "$PAM_FILE"
+sed -i 's/^\(\s*\)-session\s\+optional\s\+pam_kwallet5.so\s\+auto_start/#\1-session optional pam_kwallet5.so auto_start/' "$PAM_FILE"
+
+# Append pam_xauth.so only if it is not already there
+if ! grep -q 'session optional pam_xauth.so' "$PAM_FILE"; then
+    echo "session optional pam_xauth.so" >> "$PAM_FILE"
+fi
+
+# reconfigure the service
+systemctl daemon-reload
+systemctl enable xrdp
+
+#
+# End XRDP
+###############################################################################
+ 
+
+echo "Install is complete."
+echo "Reboot your machine to begin using XRDP."

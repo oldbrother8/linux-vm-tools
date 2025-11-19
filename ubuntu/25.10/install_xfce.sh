@@ -178,23 +178,9 @@ if [ -f /etc/gdm3/custom.conf ]; then
     sed -i 's/^AutomaticLoginEnable=.*/AutomaticLoginEnable=false/' /etc/gdm3/custom.conf
     sed -i 's/^AutomaticLogin=.*/# AutomaticLogin=/' /etc/gdm3/custom.conf
 fi
-
-# Fix PAM configuration for XRDP
-PAM_FILE="/etc/pam.d/xrdp-sesman"
-
-# Comment out gnome-keyring and kwallet PAM lines safely
-sed -i 's/^\(\s*\)-auth\s\+optional\s\+pam_gnome_keyring.so/#\1-auth optional pam_gnome_keyring.so/' "$PAM_FILE"
-sed -i 's/^\(\s*\)-auth\s\+optional\s\+pam_kwallet5.so/#\1-auth optional pam_kwallet5.so/' "$PAM_FILE"
-sed -i 's/^\(\s*\)-session\s\+optional\s\+pam_gnome_keyring.so\s\+auto_start/#\1-session optional pam_gnome_keyring.so auto_start/' "$PAM_FILE"
-sed -i 's/^\(\s*\)-session\s\+optional\s\+pam_kwallet5.so\s\+auto_start/#\1-session optional pam_kwallet5.so auto_start/' "$PAM_FILE"
-
-# Append pam_xauth.so only if it is not already there
-if ! grep -q 'session optional pam_xauth.so' "$PAM_FILE"; then
-    echo "session optional pam_xauth.so" >> "$PAM_FILE"
-fi
-
+ 
 # remove app that crashes
-# sudo apt remove light-locker -y
+sudo apt remove light-locker -y
 
 # reconfigure the service
 systemctl daemon-reload

@@ -117,7 +117,7 @@ if [ ! -f "$HOME/.config/xfce-configured" ]; then
     (
       sleep 5
 
-      xfce4-terminal --title="Hyper-V Setup Complete" --geometry=60x10 --command="bash -c \"echo 'Press Enter to reboot'; read; sudo reboot\""
+      xfce4-terminal --title="Hyper-V Setup Complete" --hide-menubar --geometry=60x10 --command="bash -c \"echo 'Press Enter to reboot'; read; sudo reboot\""
     )  >"$HOME/.config/xfce-configured-setup.log" 2>&1 &
 fi
 

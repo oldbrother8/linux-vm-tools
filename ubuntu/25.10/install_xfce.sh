@@ -82,23 +82,29 @@ if [ ! -f "$HOME/.config/xfce-configured" ]; then
     # Desktop background
     xfconf-query -c xfce4-desktop --property /backdrop/screen0/monitorrdp0/workspace0/last-image --create --type string  -s "/usr/share/xfce4/backdrops/greybird-wall.svg"
     
+    # Font DPI (96, 120, 144)
+    xfconf-query -c xsettings -p /Xft/DPI --create --type int -s 120
+
     # Window manager theme 
-    xfconf-query -c xfwm4 -p /general/theme --create --type string  -s Greybird-dark
+    xfconf-query -c xfwm4 -p /general/theme --create --type string  -s yaru-dark
  
     # Icon theme
-    xfconf-query -c xsettings -p /Net/IconThemeName --create --type string -s elementary-xfce
+    xfconf-query -c xsettings -p /Net/IconThemeName --create --type string -s yaru
 
     # GTK theme
-    xfconf-query -c xsettings -p /Net/ThemeName --create --type string -s Greybird-dark
+    xfconf-query -c xsettings -p /Net/ThemeName --create --type string -s yaru-dark
 
     # Wait for panel to load
     (
       sleep 3
 
-      # increase Panel height
-      xfconf-query -c xfce4-panel -p /panels/panel-1/size --create --type int -s 36
+      # increase top panel height
+      xfconf-query -c xfce4-panel -p /panels/panel-1/size --create --type int -s 42
 
-      # auto Panel icon size
+      # increase bottom panel height
+      xfconf-query -c xfce4-panel -p /panels/panel-2/size --create --type int -s 64
+
+      # auto panel icon size
       xfconf-query -c xfce4-panel -p /panels/panel-1/icon-size --create --type int -s 0
 
       # always show Panel
@@ -121,6 +127,8 @@ export XAUTHORITY
 if [ ! -f "$XAUTHORITY" ]; then
     touch "$XAUTHORITY"
 fi
+
+# Manually generate token
 xauth generate $DISPLAY . trusted >/dev/null 2>&1
 xauth add $DISPLAY MIT-MAGIC-COOKIE-1 $(xauth list $DISPLAY | awk '{print $3}') >/dev/null 2>&1
 

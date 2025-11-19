@@ -5,8 +5,9 @@
 #
 # It assumes existing vanilla Gnome and Wayland.
 #
-# XFCE will host the XRDP sessions 
-# Gnome 49+ is not compatible with XRDP because of Wayland
+# XFCE will be used by the XRDP sessions.
+#
+# Gnome 49+ is not compatible with XRDP because of Wayland.
 #
 
 ###############################################################################
@@ -55,8 +56,6 @@ sed -i_orig -e 's/crypt_level=high/crypt_level=none/g' /etc/xrdp/xrdp.ini
 # disable bitmap compression since its local its much faster
 sed -i_orig -e 's/bitmap_compression=true/bitmap_compression=false/g' /etc/xrdp/xrdp.ini
 
-xhost +
-
 # Create XFCE session script for XRDP
 cat > /etc/xrdp/startxfce.sh << 'EOF'
 #!/bin/sh
@@ -74,11 +73,18 @@ if [ -r /etc/default/locale ]; then
   export LANG LANGUAGE
 fi
 
+
 if [ ! -f "$HOME/.config/xfce-configured" ]; then   
  
     mkdir -p "$HOME/.config"
     touch "$HOME/.config/xfce-configured"
 
+    #<optional>
+    # Set dark theme 
+    # Set high dpi displays
+    # Desktop background
+    xfconf-query -c xfce4-desktop --property /backdrop/screen0/monitorrdp0/workspace0/last-image --create --type string  -s "/usr/share/xfce4/backdrops/greybird-wall.svg"
+    
     # Window manager theme 
     xfconf-query -c xfwm4 -p /general/theme --create --type string  -s Greybird-dark
  
@@ -87,20 +93,37 @@ if [ ! -f "$HOME/.config/xfce-configured" ]; then
 
     # GTK theme
     xfconf-query -c xsettings -p /Net/ThemeName --create --type string -s Greybird-dark
- 
-    # Desktop background
-    xfconf-query -c xfce4-desktop --property /backdrop/screen0/monitorrdp0/workspace0/last-image --create --type string  -s "/usr/share/xfce4/backdrops/greybird-wall.svg"
- 
+
+    # Wait for panel to load
+    (
+      sleep 3
+
+      # increase Panel height
+      xfconf-query -c xfce4-panel -p /panels/panel-1/size --create --type int -s 36
+
+      # auto Panel icon size
+      xfconf-query -c xfce4-panel -p /panels/panel-1/icon-size --create --type int -s 0
+
+      # always show Panel
+      xfconf-query -c xfce4-panel -p /panels/panel-1/autohide-behavior --create --type int -s 0
+
+    ) >"$HOME/.config/xfce-configured-setup.log" 2>&1 &
+    #</optional> 
+
+    #gnome will be left logged in so nudge the user to reboot
+    (
+      sleep 5
+
+      xfce4-terminal --title="XRDP Setup Complete" --geometry=60x10 --command="bash -c \"echo 'Press Enter to reboot'; read; sudo reboot\""
+    )  >"$HOME/.config/xfce-configured-setup.log" 2>&1 &
 fi
 
 # Ensure Xauthority exists and is valid
 XAUTHORITY="$HOME/.Xauthority"
 export XAUTHORITY
-
 if [ ! -f "$XAUTHORITY" ]; then
     touch "$XAUTHORITY"
 fi
-
 xauth generate $DISPLAY . trusted >/dev/null 2>&1
 xauth add $DISPLAY MIT-MAGIC-COOKIE-1 $(xauth list $DISPLAY | awk '{print $3}') >/dev/null 2>&1
 
@@ -168,7 +191,7 @@ fi
 
 # reconfigure the service
 systemctl daemon-reload
-systemctl enable xrdp
+systemctl start xrdp
 
 #
 # End XRDP

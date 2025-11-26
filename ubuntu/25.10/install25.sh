@@ -6,11 +6,11 @@
 # Enable hyper-v linux hvsocket
 # by installing linux-tools-virtual, xfce, and xrdp
 # 
-# Gnome 49+ is not compatible with hvsocket (uses xrdp) because of wayland
-# But gnome is still accessible on the non-hvsocket virtual console 
-#
-# Make sure to run this on the host:
+# Navigate to the directory for Ubuntu 25.04: cd /home/download/install25.sh
+# Make the installation script executable: chmod +x install25.sh
+# Run the script: sudo ./install25.sh
 
+# Make sure to run this on the host:
 # powershell -c "Set-VM -Name 'UbuntuVMName' -EnhancedSessionTransportType HvSocket"
 # PowerShell: Set-VM -VMName "Ubutun25" -EnhancedSessionTransportType HvSocket
 
